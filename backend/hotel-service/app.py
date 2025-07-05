@@ -18,6 +18,10 @@ DB_CONFIG = {
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
+@app.route('/', methods=['GET'])
+def index():
+    return "🏨 Welcome to the Hotel Service API"
+
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy", "service": "hotel-service"})
