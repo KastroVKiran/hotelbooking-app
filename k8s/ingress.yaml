@@ -1,0 +1,87 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hotel-booking-ingress
+  namespace: hotel-booking
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: hotel-booking.local
+    http:
+      paths:
+      - path: /api/hotels
+        pathType: Prefix
+        backend:
+          service:
+            name: hotel-service
+            port:
+              number: 81
+      - path: /api/bookings
+        pathType: Prefix
+        backend:
+          service:
+            name: booking-service
+            port:
+              number: 82
+      - path: /api/availability
+        pathType: Prefix
+        backend:
+          service:
+            name: booking-service
+            port:
+              number: 82
+      - path: /api/auth
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 83
+      - path: /api/users
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 83
+      - path: /api/reviews
+        pathType: Prefix
+        backend:
+          service:
+            name: review-service
+            port:
+              number: 84
+      - path: /api/payments
+        pathType: Prefix
+        backend:
+          service:
+            name: payment-service
+            port:
+              number: 85
+      - path: /api/invoices
+        pathType: Prefix
+        backend:
+          service:
+            name: payment-service
+            port:
+              number: 85
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-dashboard
+            port:
+              number: 8999
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-dashboard
+            port:
+              number: 8999

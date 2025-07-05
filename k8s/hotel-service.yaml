@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-service
+  namespace: hotel-booking
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hotel-service
+  template:
+    metadata:
+      labels:
+        app: hotel-service
+    spec:
+      containers:
+      - name: hotel-service
+        image: hotel-booking/hotel-service:latest
+        ports:
+        - containerPort: 81
+        env:
+        - name: DB_HOST
+          value: "mysql-db"
+        - name: DB_USER
+          value: "hotel_user"
+        - name: DB_PASSWORD
+          value: "hotel_pass"
+        - name: DB_NAME
+          value: "hotel_booking"
+        - name: DB_PORT
+          value: "3306"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 81
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 81
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hotel-service
+  namespace: hotel-booking
+spec:
+  selector:
+    app: hotel-service
+  ports:
+  - port: 81
+    targetPort: 81
+  type: ClusterIP

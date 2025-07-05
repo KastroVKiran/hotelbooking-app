@@ -1,0 +1,110 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_IMAGE = 'hotel-booking/review-service'
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        DOCKERHUB_CREDS = credentials('dockerhub-creds')
+        AWS_CREDS = credentials('aws-creds')
+    }
+    
+    parameters {
+        choice(
+            name: 'DEPLOY_ENV',
+            choices: ['dev', 'staging', 'prod'],
+            description: 'Environment to deploy'
+        )
+        choice(
+            name: 'ACTION',
+            choices: ['build', 'deploy', 'build-deploy'],
+            description: 'Action to perform'
+        )
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build Docker Image') {
+            when {
+                anyOf {
+                    expression { params.ACTION == 'build' }
+                    expression { params.ACTION == 'build-deploy' }
+                }
+            }
+            steps {
+                script {
+                    dir('backend/review-service') {
+                        sh """
+                            docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                            docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+                        """
+                    }
+                }
+            }
+        }
+        
+        stage('Push to DockerHub') {
+            when {
+                anyOf {
+                    expression { params.ACTION == 'build' }
+                    expression { params.ACTION == 'build-deploy' }
+                }
+            }
+            steps {
+                script {
+                    sh """
+                        echo ${DOCKERHUB_CREDS_PSW} | docker login -u ${DOCKERHUB_CREDS_USR} --password-stdin
+                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker push ${DOCKER_IMAGE}:latest
+                    """
+                }
+            }
+        }
+        
+        stage('Deploy to K8s') {
+            when {
+                anyOf {
+                    expression { params.ACTION == 'deploy' }
+                    expression { params.ACTION == 'build-deploy' }
+                }
+            }
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'aws-creds', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-creds', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                        sh """
+                            aws eks update-kubeconfig --region us-east-1 --name hotel-booking-cluster
+                            
+                            # Update deployment image
+                            kubectl set image deployment/review-service review-service=${DOCKER_IMAGE}:${DOCKER_TAG} -n hotel-booking
+                            
+                            # Wait for rollout to complete
+                            kubectl rollout status deployment/review-service -n hotel-booking
+                            
+                            # Verify deployment
+                            kubectl get pods -n hotel-booking -l app=review-service
+                        """
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            sh 'docker logout'
+        }
+        success {
+            echo 'Review Service pipeline completed successfully!'
+        }
+        failure {
+            echo 'Review Service pipeline failed!'
+        }
+    }
+}

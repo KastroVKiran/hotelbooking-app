@@ -1,0 +1,187 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql-db:
+    image: mysql:8.0
+    container_name: hotel-booking-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: hotel_booking
+      MYSQL_USER: hotel_user
+      MYSQL_PASSWORD: hotel_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - hotel-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Hotel Service
+  hotel-service:
+    build: ./backend/hotel-service
+    container_name: hotel-service
+    ports:
+      - "81:81"
+    environment:
+      - DB_HOST=mysql-db
+      - DB_USER=hotel_user
+      - DB_PASSWORD=hotel_pass
+      - DB_NAME=hotel_booking
+      - DB_PORT=3306
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - hotel-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:81/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Booking Service
+  booking-service:
+    build: ./backend/booking-service
+    container_name: booking-service
+    ports:
+      - "82:82"
+    environment:
+      - DB_HOST=mysql-db
+      - DB_USER=hotel_user
+      - DB_PASSWORD=hotel_pass
+      - DB_NAME=hotel_booking
+      - DB_PORT=3306
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - hotel-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:82/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # User Service
+  user-service:
+    build: ./backend/user-service
+    container_name: user-service
+    ports:
+      - "83:83"
+    environment:
+      - DB_HOST=mysql-db
+      - DB_USER=hotel_user
+      - DB_PASSWORD=hotel_pass
+      - DB_NAME=hotel_booking
+      - DB_PORT=3306
+      - SECRET_KEY=your-secret-key-here
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - hotel-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:83/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Review Service
+  review-service:
+    build: ./backend/review-service
+    container_name: review-service
+    ports:
+      - "84:84"
+    environment:
+      - DB_HOST=mysql-db
+      - DB_USER=hotel_user
+      - DB_PASSWORD=hotel_pass
+      - DB_NAME=hotel_booking
+      - DB_PORT=3306
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - hotel-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:84/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Payment Service
+  payment-service:
+    build: ./backend/payment-service
+    container_name: payment-service
+    ports:
+      - "85:85"
+    environment:
+      - DB_HOST=mysql-db
+      - DB_USER=hotel_user
+      - DB_PASSWORD=hotel_pass
+      - DB_NAME=hotel_booking
+      - DB_PORT=3306
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - hotel-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:85/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Admin Dashboard (Main Application)
+  admin-dashboard:
+    build: ./backend/admin-dashboard
+    container_name: admin-dashboard
+    ports:
+      - "80:8999"    # Map port 80 to internal port 8999
+      - "8999:8999"  # Also expose on 8999 for direct access
+    environment:
+      - DB_HOST=mysql-db
+      - DB_USER=hotel_user
+      - DB_PASSWORD=hotel_pass
+      - DB_NAME=hotel_booking
+      - DB_PORT=3306
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      hotel-service:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      review-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    networks:
+      - hotel-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8999/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql_data:
+
+networks:
+  hotel-network:
+    driver: bridge
