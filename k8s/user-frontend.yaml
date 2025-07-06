@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-frontend
+  namespace: hotel-booking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-frontend
+  template:
+    metadata:
+      labels:
+        app: user-frontend
+    spec:
+      containers:
+      - name: user-frontend
+        image: kastrov/hotel-frontend:latest  # This is the React app image
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-frontend
+  namespace: hotel-booking
+spec:
+  selector:
+    app: user-frontend
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
