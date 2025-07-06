@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_HUB_CREDS = credentials('dockerhub-creds')
         AWS_CREDS = credentials('aws-creds')
-        CLUSTER_NAME = 'hotel-booking-cluster'
+        CLUSTER_NAME = 'kastro-eks'
         REGION = 'us-east-1'
     }
     
