@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: admin-dashboard
-        image: hotel-booking/admin-dashboard:latest
+        image: kastrov/hotel-frontend:latest
         ports:
         - containerPort: 8999
         env:
