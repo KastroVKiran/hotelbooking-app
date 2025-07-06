@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: payment-service
-        image: hotel-booking/payment-service:latest
+        image: kastrov/payment-service:latest
         ports:
         - containerPort: 85
         env:
