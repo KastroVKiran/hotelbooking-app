@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: booking-service
-        image: hotel-booking/booking-service:latest
+        image: kastrov/booking-service:latest
         ports:
         - containerPort: 82
         env:
