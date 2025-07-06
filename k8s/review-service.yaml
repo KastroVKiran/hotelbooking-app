@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: review-service
-        image: hotel-booking/review-service:latest
+        image: kastrov/review-service:latest
         ports:
         - containerPort: 84
         env:
