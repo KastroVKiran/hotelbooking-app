@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: hotel-service
-        image: hotel-booking/hotel-service:latest
+        image: kastrov/hotel-service:latest
         ports:
         - containerPort: 81
         env:
